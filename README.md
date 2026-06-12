@@ -8,6 +8,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
+| v1.33.0 | [`v1.33.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33.0) | [`9b5b015`](https://github.com/reviewdog/action-eslint/commit/9b5b0150e399e1f007ee3c27bc156549810a64e3) |
 | v1.33.2 | [`v1.33.2`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33.2) | [`2fee6dd`](https://github.com/reviewdog/action-eslint/commit/2fee6dd72a5419ff4113f694e2068d2a03bb35dd) |
 | v1.34.0 | [`v1.34.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.34.0) | [`556a3fd`](https://github.com/reviewdog/action-eslint/commit/556a3fdaf8b4201d4d74d406013386aa4f7dab96) |
 
