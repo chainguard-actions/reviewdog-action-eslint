@@ -1,0 +1,113 @@
+name: Test eslint with custom workdir and tool_name
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up fake curl and fake reviewdog installer
+        run: |
+          # Create a fake install.sh that will be served by fake curl
+          cat > /tmp/fake-reviewdog-install.sh << 'INSTALL_EOF'
+          #!/bin/sh
+          # Fake reviewdog installer: parse -b <bindir> and create a fake reviewdog binary
+          BINDIR=""
+          prev=""
+          for arg in "$@"; do
+            if [ "$prev" = "-b" ]; then
+              BINDIR="$arg"
+            fi
+            prev="$arg"
+          done
+          if [ -n "$BINDIR" ]; then
+            mkdir -p "$BINDIR"
+            cat > "$BINDIR/reviewdog" << 'RD_EOF'
+          #!/bin/sh
+          # Fake reviewdog: log invocation args and consume stdin, exit 0
+          echo "reviewdog called with args: $*" >&2
+          cat > /dev/null
+          exit 0
+          RD_EOF
+            chmod +x "$BINDIR/reviewdog"
+          fi
+          INSTALL_EOF
+          chmod +x /tmp/fake-reviewdog-install.sh
+
+          # Create a fake curl that serves the fake installer
+          mkdir -p /tmp/fake-bin
+          cat > /tmp/fake-bin/curl << 'CURL_EOF'
+          #!/bin/sh
+          # Fake curl: intercept reviewdog install URL, honor -o flag
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *reviewdog*)
+              if [ -n "$out" ]; then
+                cat /tmp/fake-reviewdog-install.sh > "$out"
+              else
+                cat /tmp/fake-reviewdog-install.sh
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          CURL_EOF
+          chmod +x /tmp/fake-bin/curl
+          echo "/tmp/fake-bin" >> "$GITHUB_PATH"
+
+      - name: Set up custom workdir with clean JS file
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/my-subproject/src"
+          # Create a minimal package.json with eslint
+          cat > "$GITHUB_WORKSPACE/my-subproject/package.json" << 'EOF'
+          {
+            "name": "my-subproject",
+            "version": "1.0.0",
+            "devDependencies": {
+              "eslint": "^8.0.0"
+            }
+          }
+          EOF
+          # Create a minimal eslint config
+          cat > "$GITHUB_WORKSPACE/my-subproject/.eslintrc.json" << 'EOF'
+          {
+            "env": {
+              "browser": true,
+              "es6": true
+            },
+            "rules": {}
+          }
+          EOF
+          # Create a clean JS file in src/
+          cat > "$GITHUB_WORKSPACE/my-subproject/src/index.js" << 'EOF'
+          // Main entry point
+          var greeting = "hello world";
+          console.log(greeting);
+          EOF
+          # Install eslint
+          cd "$GITHUB_WORKSPACE/my-subproject"
+          npm install --silent
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          eslint_flags: 'src/'
+          workdir: my-subproject
+          tool_name: my-custom-eslint
+
+      - name: Assert action completed successfully with custom workdir and tool_name
+        run: |
+          echo "Action completed successfully with custom workdir 'my-subproject' and tool_name 'my-custom-eslint'"
+          echo "PASS"

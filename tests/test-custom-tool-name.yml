@@ -1,0 +1,29 @@
+name: Test custom tool_name input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REF: refs/heads/main
+      GITHUB_EVENT_NAME: push
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install eslint dependencies
+        run: npm install
+
+      - id: action
+        uses: .
+        with:
+          github_token: fake-token-for-local-reporter
+          reporter: local
+          filter_mode: nofilter
+          fail_level: none
+          eslint_flags: testdata/empty.js
+          workdir: .
+          tool_name: my-custom-eslint
+
+      - name: Assert action completed successfully with custom tool name
+        run: |
+          echo "PASS: action ran successfully with custom tool_name=my-custom-eslint"

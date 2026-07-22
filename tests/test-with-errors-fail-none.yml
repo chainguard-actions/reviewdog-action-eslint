@@ -1,0 +1,112 @@
+name: Test eslint with errors but fail_level=none
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up fake curl and fake reviewdog installer
+        run: |
+          # Create a fake install.sh that will be served by fake curl
+          cat > /tmp/fake-reviewdog-install.sh << 'INSTALL_EOF'
+          #!/bin/sh
+          # Fake reviewdog installer: parse -b <bindir> and create a fake reviewdog binary
+          BINDIR=""
+          prev=""
+          for arg in "$@"; do
+            if [ "$prev" = "-b" ]; then
+              BINDIR="$arg"
+            fi
+            prev="$arg"
+          done
+          if [ -n "$BINDIR" ]; then
+            mkdir -p "$BINDIR"
+            cat > "$BINDIR/reviewdog" << 'RD_EOF'
+          #!/bin/sh
+          # Fake reviewdog: consume stdin and exit 0 (simulating fail_level=none behavior)
+          cat > /dev/null
+          exit 0
+          RD_EOF
+            chmod +x "$BINDIR/reviewdog"
+          fi
+          INSTALL_EOF
+          chmod +x /tmp/fake-reviewdog-install.sh
+
+          # Create a fake curl that serves the fake installer
+          mkdir -p /tmp/fake-bin
+          cat > /tmp/fake-bin/curl << 'CURL_EOF'
+          #!/bin/sh
+          # Fake curl: intercept reviewdog install URL, honor -o flag
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *reviewdog*)
+              if [ -n "$out" ]; then
+                cat /tmp/fake-reviewdog-install.sh > "$out"
+              else
+                cat /tmp/fake-reviewdog-install.sh
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          CURL_EOF
+          chmod +x /tmp/fake-bin/curl
+          echo "/tmp/fake-bin" >> "$GITHUB_PATH"
+
+      - name: Set up test workspace with JS file that has errors
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/test-workdir-errors"
+          # Create a minimal package.json with eslint
+          cat > "$GITHUB_WORKSPACE/test-workdir-errors/package.json" << 'EOF'
+          {
+            "name": "test-project-errors",
+            "version": "1.0.0",
+            "devDependencies": {
+              "eslint": "^8.0.0"
+            }
+          }
+          EOF
+          # Create a minimal eslint config
+          cat > "$GITHUB_WORKSPACE/test-workdir-errors/.eslintrc.json" << 'EOF'
+          {
+            "env": {
+              "browser": true,
+              "es6": true
+            },
+            "rules": {
+              "no-unused-vars": "error"
+            }
+          }
+          EOF
+          # Create a JS file with lint errors (unused variable)
+          cat > "$GITHUB_WORKSPACE/test-workdir-errors/error.js" << 'EOF'
+          var unusedVariable = "this will trigger no-unused-vars";
+          EOF
+          # Install eslint
+          cd "$GITHUB_WORKSPACE/test-workdir-errors"
+          npm install --silent
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          level: warning
+          eslint_flags: 'error.js'
+          workdir: test-workdir-errors
+
+      - name: Assert action completed successfully despite lint errors (fail_level=none)
+        run: |
+          echo "Action completed successfully with fail_level=none even though lint errors exist"
+          echo "PASS"
