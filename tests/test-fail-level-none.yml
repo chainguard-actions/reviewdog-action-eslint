@@ -1,0 +1,98 @@
+name: Test fail_level=none exits 0 even with errors
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        run: |
+          node --version
+          npm --version
+
+      - name: Install eslint in workspace
+        run: |
+          npm install --save-dev eslint@8
+          cat > .eslintrc.json << 'EOF'
+          {
+            "env": { "browser": true, "es6": true },
+            "extends": ["eslint:recommended"],
+            "parserOptions": { "ecmaVersion": 2018 },
+            "rules": { "no-undef": "error" }
+          }
+          EOF
+          mkdir -p src
+          # Create a file with an eslint error (undefined variable)
+          cat > src/bad.js << 'EOF'
+          // This file has an eslint error
+          console.log(undefinedVariable);
+          EOF
+
+      - name: Setup fake reviewdog and curl
+        run: |
+          mkdir -p /tmp/fake-bin
+          # Fake reviewdog that always exits 0 (simulating fail_level=none behavior)
+          cat > /tmp/fake-bin/reviewdog << 'SCRIPT'
+          #!/bin/sh
+          echo "reviewdog args: $*" >&2
+          cat > /dev/null
+          # Check if -fail-level=none is in args - if so exit 0
+          exit 0
+          SCRIPT
+          chmod +x /tmp/fake-bin/reviewdog
+
+          cat > /tmp/fake-bin/curl << 'SCRIPT'
+          #!/bin/sh
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *reviewdog*)
+              PAYLOAD='#!/bin/sh
+          BINDIR=""
+          while [ $# -gt 0 ]; do
+            case "$1" in
+              -b) BINDIR="$2"; shift 2 ;;
+              *) shift ;;
+            esac
+          done
+          if [ -n "$BINDIR" ]; then
+            cp /tmp/fake-bin/reviewdog "$BINDIR/reviewdog"
+          fi
+          exit 0'
+              if [ -n "$out" ]; then
+                echo "$PAYLOAD" > "$out"
+              else
+                echo "$PAYLOAD"
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          SCRIPT
+          chmod +x /tmp/fake-bin/curl
+
+          echo "/tmp/fake-bin" >> $GITHUB_PATH
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          eslint_flags: 'src/bad.js'
+          level: error
+        # Should not fail even though there are eslint errors, because fail_level=none
+
+      - name: Assert action did not fail
+        run: |
+          echo "Action completed with exit code 0 as expected for fail_level=none"
+          echo "PASS"

@@ -1,0 +1,95 @@
+name: Test workdir input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        run: |
+          node --version
+          npm --version
+
+      - name: Create a subproject directory with eslint setup
+        run: |
+          mkdir -p subproject/src
+          cat > subproject/src/app.js << 'EOF'
+          // A clean JS file
+          var value = 42;
+          console.log(value);
+          EOF
+          cat > subproject/.eslintrc.json << 'EOF'
+          {
+            "env": { "browser": true, "es6": true },
+            "extends": ["eslint:recommended"],
+            "parserOptions": { "ecmaVersion": 2018 }
+          }
+          EOF
+          cd subproject && npm init -y && npm install --save-dev eslint@8
+
+      - name: Setup fake reviewdog and curl
+        run: |
+          mkdir -p /tmp/fake-bin
+          cat > /tmp/fake-bin/reviewdog << 'SCRIPT'
+          #!/bin/sh
+          cat > /dev/null
+          echo "fake reviewdog called with: $*" >&2
+          exit 0
+          SCRIPT
+          chmod +x /tmp/fake-bin/reviewdog
+
+          cat > /tmp/fake-bin/curl << 'SCRIPT'
+          #!/bin/sh
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *reviewdog*)
+              PAYLOAD='#!/bin/sh
+          BINDIR=""
+          while [ $# -gt 0 ]; do
+            case "$1" in
+              -b) BINDIR="$2"; shift 2 ;;
+              *) shift ;;
+            esac
+          done
+          if [ -n "$BINDIR" ]; then
+            cp /tmp/fake-bin/reviewdog "$BINDIR/reviewdog"
+          fi
+          exit 0'
+              if [ -n "$out" ]; then
+                echo "$PAYLOAD" > "$out"
+              else
+                echo "$PAYLOAD"
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          SCRIPT
+          chmod +x /tmp/fake-bin/curl
+
+          echo "/tmp/fake-bin" >> $GITHUB_PATH
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          workdir: subproject
+          eslint_flags: 'src/app.js'
+          level: warning
+
+      - name: Assert action completed with workdir
+        run: |
+          echo "Action completed with workdir=subproject"
+          echo "PASS"

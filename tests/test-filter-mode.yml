@@ -1,0 +1,116 @@
+name: Test filter_mode and reviewdog_flags inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        run: |
+          node --version
+          npm --version
+
+      - name: Install eslint in workspace
+        run: |
+          npm install --save-dev eslint@8
+          cat > .eslintrc.json << 'EOF'
+          {
+            "env": { "browser": true, "es6": true },
+            "extends": ["eslint:recommended"],
+            "parserOptions": { "ecmaVersion": 2018 }
+          }
+          EOF
+          mkdir -p src
+          cat > src/app.js << 'EOF'
+          // A clean JS file
+          var x = 1;
+          console.log(x);
+          EOF
+
+      - name: Setup fake reviewdog and curl - capture args
+        run: |
+          mkdir -p /tmp/fake-bin
+          cat > /tmp/fake-bin/reviewdog << 'SCRIPT'
+          #!/bin/sh
+          echo "$*" > /tmp/reviewdog-args.txt
+          cat > /dev/null
+          exit 0
+          SCRIPT
+          chmod +x /tmp/fake-bin/reviewdog
+
+          cat > /tmp/fake-bin/curl << 'SCRIPT'
+          #!/bin/sh
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *reviewdog*)
+              PAYLOAD='#!/bin/sh
+          BINDIR=""
+          while [ $# -gt 0 ]; do
+            case "$1" in
+              -b) BINDIR="$2"; shift 2 ;;
+              *) shift ;;
+            esac
+          done
+          if [ -n "$BINDIR" ]; then
+            cp /tmp/fake-bin/reviewdog "$BINDIR/reviewdog"
+          fi
+          exit 0'
+              if [ -n "$out" ]; then
+                echo "$PAYLOAD" > "$out"
+              else
+                echo "$PAYLOAD"
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          SCRIPT
+          chmod +x /tmp/fake-bin/curl
+
+          echo "/tmp/fake-bin" >> $GITHUB_PATH
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: file
+          fail_level: none
+          reviewdog_flags: '-tee'
+          eslint_flags: 'src/app.js'
+          level: warning
+
+      - name: Assert filter_mode was passed to reviewdog
+        run: |
+          echo "Reviewdog args:"
+          cat /tmp/reviewdog-args.txt
+          if ! grep -q "\-filter-mode=file" /tmp/reviewdog-args.txt; then
+            echo "FAIL: expected '-filter-mode=file' in reviewdog args"
+            exit 1
+          fi
+          echo "PASS: filter_mode correctly passed to reviewdog"
+
+      - name: Assert reviewdog_flags were passed
+        run: |
+          if ! grep -q "\-tee" /tmp/reviewdog-args.txt; then
+            echo "FAIL: expected '-tee' in reviewdog args from reviewdog_flags"
+            exit 1
+          fi
+          echo "PASS: reviewdog_flags correctly passed to reviewdog"
+
+      - name: Assert reporter was passed
+        run: |
+          if ! grep -q "\-reporter=github-check" /tmp/reviewdog-args.txt; then
+            echo "FAIL: expected '-reporter=github-check' in reviewdog args"
+            exit 1
+          fi
+          echo "PASS: reporter correctly passed to reviewdog"

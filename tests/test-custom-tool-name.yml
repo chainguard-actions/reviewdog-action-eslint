@@ -1,0 +1,109 @@
+name: Test custom tool_name and level inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        run: |
+          node --version
+          npm --version
+
+      - name: Install eslint in workspace
+        run: |
+          npm install --save-dev eslint@8
+          cat > .eslintrc.json << 'EOF'
+          {
+            "env": { "browser": true, "es6": true },
+            "extends": ["eslint:recommended"],
+            "parserOptions": { "ecmaVersion": 2018 }
+          }
+          EOF
+          mkdir -p src
+          cat > src/app.js << 'EOF'
+          // A clean JS file
+          var x = 1;
+          console.log(x);
+          EOF
+
+      - name: Setup fake reviewdog and curl - capture tool name
+        run: |
+          mkdir -p /tmp/fake-bin
+          # Fake reviewdog that records its arguments
+          cat > /tmp/fake-bin/reviewdog << 'SCRIPT'
+          #!/bin/sh
+          echo "$*" > /tmp/reviewdog-args.txt
+          cat > /dev/null
+          exit 0
+          SCRIPT
+          chmod +x /tmp/fake-bin/reviewdog
+
+          cat > /tmp/fake-bin/curl << 'SCRIPT'
+          #!/bin/sh
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *reviewdog*)
+              PAYLOAD='#!/bin/sh
+          BINDIR=""
+          while [ $# -gt 0 ]; do
+            case "$1" in
+              -b) BINDIR="$2"; shift 2 ;;
+              *) shift ;;
+            esac
+          done
+          if [ -n "$BINDIR" ]; then
+            cp /tmp/fake-bin/reviewdog "$BINDIR/reviewdog"
+          fi
+          exit 0'
+              if [ -n "$out" ]; then
+                echo "$PAYLOAD" > "$out"
+              else
+                echo "$PAYLOAD"
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          SCRIPT
+          chmod +x /tmp/fake-bin/curl
+
+          echo "/tmp/fake-bin" >> $GITHUB_PATH
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          tool_name: my-custom-eslint
+          level: info
+          eslint_flags: 'src/app.js'
+
+      - name: Assert tool_name was passed to reviewdog
+        run: |
+          echo "Reviewdog args:"
+          cat /tmp/reviewdog-args.txt
+          if ! grep -q "my-custom-eslint" /tmp/reviewdog-args.txt; then
+            echo "FAIL: expected tool_name 'my-custom-eslint' in reviewdog args"
+            exit 1
+          fi
+          echo "PASS: tool_name correctly passed to reviewdog"
+
+      - name: Assert level was passed to reviewdog
+        run: |
+          if ! grep -q "\-level=info" /tmp/reviewdog-args.txt; then
+            echo "FAIL: expected '-level=info' in reviewdog args"
+            exit 1
+          fi
+          echo "PASS: level correctly passed to reviewdog"

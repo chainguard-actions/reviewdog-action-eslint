@@ -1,0 +1,105 @@
+name: Test basic usage - clean file no errors
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        run: |
+          node --version
+          npm --version
+
+      - name: Install eslint in workspace
+        run: |
+          npm install --save-dev eslint@8 eslint-config-standard eslint-plugin-import eslint-plugin-node eslint-plugin-promise eslint-plugin-standard
+
+      - name: Create eslint config
+        run: |
+          cat > .eslintrc.json << 'EOF'
+          {
+            "env": { "browser": true, "es6": true },
+            "extends": ["eslint:recommended"],
+            "parserOptions": { "ecmaVersion": 2018 }
+          }
+          EOF
+
+      - name: Create a clean JS file to lint
+        run: |
+          mkdir -p src
+          cat > src/clean.js << 'EOF'
+          // A clean JS file with no errors
+          var x = 1;
+          console.log(x);
+          EOF
+
+      - name: Setup fake reviewdog
+        run: |
+          mkdir -p /tmp/fake-bin
+          # Create a fake reviewdog that accepts all flags and exits 0
+          cat > /tmp/fake-bin/reviewdog << 'SCRIPT'
+          #!/bin/sh
+          # Fake reviewdog: consume stdin and exit 0
+          cat > /dev/null
+          echo "fake reviewdog called with: $*" >&2
+          exit 0
+          SCRIPT
+          chmod +x /tmp/fake-bin/reviewdog
+
+          # Create a fake curl that installs our fake reviewdog
+          cat > /tmp/fake-bin/curl << 'SCRIPT'
+          #!/bin/sh
+          # Fake curl: intercept reviewdog install.sh download
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *reviewdog*)
+              PAYLOAD='#!/bin/sh
+          # Fake install.sh: copy fake reviewdog to the -b directory
+          BINDIR=""
+          while [ $# -gt 0 ]; do
+            case "$1" in
+              -b) BINDIR="$2"; shift 2 ;;
+              *) shift ;;
+            esac
+          done
+          if [ -n "$BINDIR" ]; then
+            cp /tmp/fake-bin/reviewdog "$BINDIR/reviewdog"
+          fi
+          exit 0'
+              if [ -n "$out" ]; then
+                echo "$PAYLOAD" > "$out"
+              else
+                echo "$PAYLOAD"
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          SCRIPT
+          chmod +x /tmp/fake-bin/curl
+
+          echo "/tmp/fake-bin" >> $GITHUB_PATH
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          eslint_flags: 'src/clean.js'
+          level: warning
+
+      - name: Assert action completed successfully
+        run: |
+          echo "Action completed without error"
+          echo "PASS"
