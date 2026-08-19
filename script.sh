@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 cd "${GITHUB_WORKSPACE}/${INPUT_WORKDIR}" || exit 1
 
@@ -9,7 +9,7 @@ ESLINT_FORMATTER="${GITHUB_ACTION_PATH}/eslint-formatter-rdjson/index.js"
 
 echo '::group::🐶 Installing reviewdog ... https://github.com/reviewdog/reviewdog'
 INSTALL_SCRIPT="$(mktemp)"
-curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/fd59714416d6d9a1c0692d872e38e7f8448df4fc/install.sh -o "${INSTALL_SCRIPT}"
+curl -sfL -o "${INSTALL_SCRIPT}" https://raw.githubusercontent.com/reviewdog/reviewdog/fd59714416d6d9a1c0692d872e38e7f8448df4fc/install.sh
 sh "${INSTALL_SCRIPT}" -b "${TEMP_PATH}" "${REVIEWDOG_VERSION}" 2>&1
 rm -f "${INSTALL_SCRIPT}"
 echo '::endgroup::'
@@ -25,9 +25,12 @@ fi
 
 echo "eslint version:$(npx --no-install -c 'eslint --version')"
 
-ESLINT_FLAGS="${INPUT_ESLINT_FLAGS:-.}"
-
 echo '::group:: Running eslint with reviewdog 🐶 ...'
+ESLINT_FLAGS="${INPUT_ESLINT_FLAGS:-.}"
+reviewdog_flags=()
+if [ -n "${INPUT_REVIEWDOG_FLAGS}" ]; then
+  read -ra reviewdog_flags <<< "${INPUT_REVIEWDOG_FLAGS}"
+fi
 npx --no-install -c "eslint -f=\"${ESLINT_FORMATTER}\" \"${ESLINT_FLAGS}\"" \
   | reviewdog -f=rdjson \
       -name="${INPUT_TOOL_NAME}" \
@@ -36,7 +39,7 @@ npx --no-install -c "eslint -f=\"${ESLINT_FORMATTER}\" \"${ESLINT_FLAGS}\"" \
       -fail-level="${INPUT_FAIL_LEVEL}" \
       -fail-on-error="${INPUT_FAIL_ON_ERROR}" \
       -level="${INPUT_LEVEL}" \
-      ${INPUT_REVIEWDOG_FLAGS:+"${INPUT_REVIEWDOG_FLAGS}"}
+      "${reviewdog_flags[@]}"
 
 reviewdog_rc=$?
 echo '::endgroup::'

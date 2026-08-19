@@ -1,0 +1,91 @@
+name: Test custom workdir
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Node.js and install eslint in custom workdir
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/workdir-project"
+          cd "$GITHUB_WORKSPACE/tests/fixtures/workdir-project"
+          npm install --save-dev eslint@^8.0.0
+
+      - name: Set up fake curl to mock reviewdog installer
+        run: |
+          mkdir -p /tmp/fake-bin
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-reviewdog-install.sh" /tmp/fake-reviewdog-install.sh
+          chmod +x /tmp/fake-reviewdog-install.sh
+
+          cat > /tmp/fake-bin/curl << 'EOF'
+          #!/bin/sh
+          # Fake curl: serve fake reviewdog install script, honor -o flag
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *reviewdog*)
+              if [ -n "$out" ]; then
+                cat /tmp/fake-reviewdog-install.sh > "$out"
+              else
+                cat /tmp/fake-reviewdog-install.sh
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          EOF
+          chmod +x /tmp/fake-bin/curl
+          echo "/tmp/fake-bin" >> "$GITHUB_PATH"
+
+      - name: Create project files in custom workdir
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/workdir-project/src"
+
+          # Create a clean JS file
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/workdir-project/src/app.js" << 'EOF'
+          // Clean application file
+          'use strict'
+
+          function greet (name) {
+            return 'Hello, ' + name
+          }
+
+          module.exports = { greet }
+          EOF
+
+          # Create eslint config in the workdir
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/workdir-project/.eslintrc.json" << 'EOF'
+          {
+            "env": {
+              "node": true,
+              "es6": true
+            },
+            "parserOptions": {
+              "ecmaVersion": 2018
+            },
+            "rules": {}
+          }
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          eslint_flags: 'src/app.js'
+          workdir: 'tests/fixtures/workdir-project'
+
+      - name: Assert action completed successfully with custom workdir
+        run: |
+          echo "Action completed successfully using custom workdir"
+          echo "PASS"

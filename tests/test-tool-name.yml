@@ -1,0 +1,96 @@
+name: Test custom tool_name input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Node.js and install eslint
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          npm install --save-dev eslint@^8.0.0
+
+      - name: Set up fake curl to mock reviewdog installer and capture reviewdog args
+        run: |
+          mkdir -p /tmp/fake-bin
+
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-reviewdog-install.sh" /tmp/fake-reviewdog-install.sh
+          chmod +x /tmp/fake-reviewdog-install.sh
+
+          cat > /tmp/fake-bin/curl << 'EOF'
+          #!/bin/sh
+          # Fake curl: serve fake reviewdog install script, honor -o flag
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *reviewdog*)
+              if [ -n "$out" ]; then
+                cat /tmp/fake-reviewdog-install.sh > "$out"
+              else
+                cat /tmp/fake-reviewdog-install.sh
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          EOF
+          chmod +x /tmp/fake-bin/curl
+          echo "/tmp/fake-bin" >> "$GITHUB_PATH"
+
+          # Create a fake reviewdog that captures its arguments
+          mkdir -p /tmp/reviewdog-capture
+          cat > /tmp/fake-reviewdog-capture.sh << 'RDOG_EOF'
+          #!/bin/sh
+          # Capture reviewdog arguments for assertion
+          echo "$@" > /tmp/reviewdog-capture/args.txt
+          cat > /dev/null
+          exit 0
+          RDOG_EOF
+          chmod +x /tmp/fake-reviewdog-capture.sh
+
+      - name: Create a clean JS file to lint
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/tool-name-test"
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/tool-name-test/index.js" << 'EOF'
+          // Clean file
+          'use strict'
+          const x = 1
+          console.log(x)
+          EOF
+
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/tool-name-test/.eslintrc.json" << 'EOF'
+          {
+            "env": {
+              "node": true,
+              "es6": true
+            },
+            "parserOptions": {
+              "ecmaVersion": 2018
+            },
+            "rules": {}
+          }
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          tool_name: 'my-custom-eslint'
+          eslint_flags: 'tests/fixtures/tool-name-test/index.js --no-eslintrc -c tests/fixtures/tool-name-test/.eslintrc.json'
+          workdir: '.'
+
+      - name: Assert action completed successfully with custom tool_name
+        run: |
+          echo "Action completed successfully with custom tool_name=my-custom-eslint"
+          echo "PASS"

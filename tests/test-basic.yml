@@ -1,0 +1,89 @@
+name: Test basic usage - no lint errors
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Node.js and install eslint
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          # Install eslint and required plugins for the action's .eslintrc.js
+          npm install --save-dev eslint@^8.0.0 eslint-config-standard@^17.1.0 \
+            eslint-plugin-import@^2.22.1 eslint-plugin-node@^11.1.0 \
+            eslint-plugin-promise@^6.0.0 eslint-plugin-standard@^5.0.0
+
+      - name: Set up fake curl to mock reviewdog installer
+        run: |
+          mkdir -p /tmp/fake-bin
+          # Copy the fixture install script
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-reviewdog-install.sh" /tmp/fake-reviewdog-install.sh
+          chmod +x /tmp/fake-reviewdog-install.sh
+
+          cat > /tmp/fake-bin/curl << 'EOF'
+          #!/bin/sh
+          # Fake curl: serve fake reviewdog install script, honor -o flag
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *reviewdog*)
+              if [ -n "$out" ]; then
+                cat /tmp/fake-reviewdog-install.sh > "$out"
+              else
+                cat /tmp/fake-reviewdog-install.sh
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          EOF
+          chmod +x /tmp/fake-bin/curl
+          echo "/tmp/fake-bin" >> "$GITHUB_PATH"
+
+      - name: Create a clean JS file to lint
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/clean-js"
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/clean-js/index.js" << 'EOF'
+          // A clean JavaScript file with no lint errors
+          'use strict'
+
+          const greeting = 'hello'
+          console.log(greeting)
+          EOF
+
+          # Create a minimal eslint config that doesn't require extra plugins
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/clean-js/.eslintrc.json" << 'EOF'
+          {
+            "env": {
+              "node": true,
+              "es6": true
+            },
+            "parserOptions": {
+              "ecmaVersion": 2018
+            },
+            "rules": {}
+          }
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          eslint_flags: 'tests/fixtures/clean-js/index.js --no-eslintrc -c tests/fixtures/clean-js/.eslintrc.json'
+          workdir: '.'
+
+      - name: Assert action completed successfully
+        run: |
+          echo "Action completed successfully with exit code 0"
+          echo "PASS"

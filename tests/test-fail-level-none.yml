@@ -1,0 +1,87 @@
+name: Test fail_level none - errors do not fail the action
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Node.js and install eslint
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          npm install --save-dev eslint@^8.0.0
+
+      - name: Set up fake curl to mock reviewdog installer
+        run: |
+          mkdir -p /tmp/fake-bin
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-reviewdog-install.sh" /tmp/fake-reviewdog-install.sh
+          chmod +x /tmp/fake-reviewdog-install.sh
+
+          cat > /tmp/fake-bin/curl << 'EOF'
+          #!/bin/sh
+          # Fake curl: serve fake reviewdog install script, honor -o flag
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *reviewdog*)
+              if [ -n "$out" ]; then
+                cat /tmp/fake-reviewdog-install.sh > "$out"
+              else
+                cat /tmp/fake-reviewdog-install.sh
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          EOF
+          chmod +x /tmp/fake-bin/curl
+          echo "/tmp/fake-bin" >> "$GITHUB_PATH"
+
+      - name: Create a JS file with lint errors
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/error-js"
+          # This file has intentional lint errors (unused variable, missing semicolon)
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/error-js/bad.js" << 'EOF'
+          var unused_var = 1
+          var x = 2
+          console.log(x)
+          EOF
+
+          # Create a minimal eslint config that flags unused vars
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/error-js/.eslintrc.json" << 'EOF'
+          {
+            "env": {
+              "node": true,
+              "es6": true
+            },
+            "parserOptions": {
+              "ecmaVersion": 2018
+            },
+            "rules": {
+              "no-unused-vars": "error"
+            }
+          }
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          level: error
+          eslint_flags: 'tests/fixtures/error-js/bad.js --no-eslintrc -c tests/fixtures/error-js/.eslintrc.json'
+          workdir: '.'
+
+      - name: Assert action completed with exit code 0 despite lint errors
+        run: |
+          echo "Action completed successfully - fail_level=none means lint errors do not fail the action"
+          echo "PASS"
