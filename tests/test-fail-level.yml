@@ -1,0 +1,34 @@
+name: Test fail_level causes failure on eslint errors
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REF: refs/heads/main
+      GITHUB_EVENT_NAME: push
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - id: action
+        uses: .
+        with:
+          github_token: fake-token-for-local-testing
+          reporter: local
+          filter_mode: nofilter
+          fail_level: error
+          eslint_flags: 'testdata/error.js'
+          workdir: '.'
+        continue-on-error: true
+
+      - name: Assert action failed due to eslint errors
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          if [ "${{ steps.action.outcome }}" != "failure" ]; then
+            echo "FAIL: expected action to fail (eslint errors found with fail_level=error) but got ${{ steps.action.outcome }}"
+            exit 1
+          fi
+          echo "PASS: action correctly failed when eslint errors found with fail_level=error"

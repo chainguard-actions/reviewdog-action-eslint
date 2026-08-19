@@ -1,0 +1,89 @@
+name: Test basic eslint run (no errors)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install eslint in test project
+        run: |
+          cd "$GITHUB_WORKSPACE/tests/fixtures/eslint-project"
+          npm install
+
+      - name: Set up fake reviewdog and curl
+        run: |
+          FAKE_BIN_DIR="$GITHUB_WORKSPACE/tests/fake-bin"
+          mkdir -p "$FAKE_BIN_DIR"
+
+          # Create a fake reviewdog that accepts stdin and exits 0
+          cat > "$FAKE_BIN_DIR/reviewdog" << 'EOF'
+          #!/bin/sh
+          cat > /dev/null
+          echo "reviewdog: no issues (fake)"
+          exit 0
+          EOF
+          chmod +x "$FAKE_BIN_DIR/reviewdog"
+
+          # Create a fake install.sh that installs the fake reviewdog
+          FAKE_RD="$FAKE_BIN_DIR/reviewdog"
+          cat > /tmp/fake-reviewdog-install.sh << INSTALLEOF
+          #!/bin/sh
+          BINDIR="."
+          while [ \$# -gt 0 ]; do
+            case "\$1" in
+              -b) BINDIR="\$2"; shift 2 ;;
+              *) shift ;;
+            esac
+          done
+          mkdir -p "\$BINDIR"
+          cp "${FAKE_RD}" "\$BINDIR/reviewdog"
+          chmod +x "\$BINDIR/reviewdog"
+          echo "Fake reviewdog installed to \$BINDIR"
+          INSTALLEOF
+          chmod +x /tmp/fake-reviewdog-install.sh
+
+          # Create a fake curl that serves the fake install script
+          # Supports both pipe form (stdout) and hardened form (-o FILE)
+          cat > "$FAKE_BIN_DIR/curl" << 'CURLEOF'
+          #!/bin/sh
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *reviewdog*)
+              if [ -n "$out" ]; then
+                cat /tmp/fake-reviewdog-install.sh > "$out"
+              else
+                cat /tmp/fake-reviewdog-install.sh
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          CURLEOF
+          chmod +x "$FAKE_BIN_DIR/curl"
+
+          # Add fake bin dir to PATH for subsequent steps
+          echo "$FAKE_BIN_DIR" >> "$GITHUB_PATH"
+          echo "Fake binaries set up in $FAKE_BIN_DIR"
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          eslint_flags: "index.js --no-eslintrc -c ${{ github.workspace }}/tests/fixtures/eslint-project/.eslintrc.json"
+          workdir: "tests/fixtures/eslint-project"
+
+      - name: Assert action completed successfully
+        run: |
+          echo "PASS: action completed without error"

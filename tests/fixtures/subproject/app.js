@@ -1,0 +1,8 @@
+// Clean JS file in subproject
+'use strict'
+
+function add (a, b) {
+  return a + b
+}
+
+module.exports = { add }

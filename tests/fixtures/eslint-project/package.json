@@ -1,0 +1,8 @@
+{
+  "name": "eslint-test-project",
+  "version": "1.0.0",
+  "description": "Minimal eslint test project",
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  }
+}
