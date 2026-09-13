@@ -1,0 +1,54 @@
+#!/bin/sh
+# Fake npx: intercepts eslint calls and outputs lint errors for testing fail_level
+# Handles:
+#   npx --no-install -c 'eslint --version'
+#   npx --no-install eslint [args...]
+
+skip_next=0
+cmd=""
+for arg in "$@"; do
+  if [ "$skip_next" = "1" ]; then
+    # This is the argument to -c; check if it's an eslint version check
+    case "$arg" in
+      *"eslint --version"*|*"eslint"*)
+        echo "v8.57.0"
+        exit 0
+        ;;
+      *)
+        eval "$arg"
+        exit $?
+        ;;
+    esac
+  fi
+  case "$arg" in
+    --no-install|--yes|-y) continue ;;
+    -c) skip_next=1; continue ;;
+    *) cmd="$arg"; break ;;
+  esac
+done
+
+case "$cmd" in
+  eslint)
+    # Check if --version flag is present
+    for arg in "$@"; do
+      if [ "$arg" = "--version" ]; then
+        echo "v8.57.0"
+        exit 0
+      fi
+    done
+    # Output rdjson with an error diagnostic and exit 1
+    cat <<'EOF'
+{"source":{"name":"eslint","url":"https://eslint.org"},"diagnostics":[{"message":"'foo' is not defined.","location":{"path":"testdata/error.js","range":{"start":{"line":1,"column":1}}},"severity":"ERROR","code":{"value":"no-undef","url":"https://eslint.org/docs/rules/no-undef"}}]}
+EOF
+    exit 1
+    ;;
+  *)
+    # Fall through to real npx if available
+    if [ -x /usr/bin/npx ]; then
+      exec /usr/bin/npx "$@"
+    else
+      echo "npx: command '$cmd' not found" >&2
+      exit 1
+    fi
+    ;;
+esac

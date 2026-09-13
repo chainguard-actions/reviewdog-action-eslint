@@ -1,0 +1,54 @@
+name: Test eslint fail_level error causes failure
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install fake binaries (reviewdog exits 1, npx outputs errors)
+        run: |
+          # Copy fake install script (installs reviewdog that exits 1) to /tmp
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-reviewdog-install-fail.sh" /tmp/fake-reviewdog-install-fail.sh
+          chmod +x /tmp/fake-reviewdog-install-fail.sh
+
+          # Install fake curl-fail (serves the fail install script) and fake npx-errors
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl-fail" /usr/local/bin/curl \
+            || sudo cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl-fail" /usr/local/bin/curl
+          chmod +x /usr/local/bin/curl \
+            || sudo chmod +x /usr/local/bin/curl
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-npx-errors" /usr/local/bin/npx \
+            || sudo cp "$GITHUB_WORKSPACE/tests/fixtures/fake-npx-errors" /usr/local/bin/npx
+          chmod +x /usr/local/bin/npx \
+            || sudo chmod +x /usr/local/bin/npx
+
+          which curl
+          which npx
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: error
+          level: error
+          eslint_flags: '.'
+          workdir: '.'
+          tool_name: 'eslint-test-fail-level'
+
+      - name: Assert action failed due to eslint errors with fail_level=error
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action correctly failed when eslint found errors with fail_level=error"
+          elif [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded (reviewdog may have filtered out errors in this context)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

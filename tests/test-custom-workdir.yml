@@ -1,0 +1,47 @@
+name: Test eslint with custom workdir
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create a test subdir and install fake binaries
+        run: |
+          # Copy fake install script to /tmp
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-reviewdog-install.sh" /tmp/fake-reviewdog-install.sh
+          chmod +x /tmp/fake-reviewdog-install.sh
+
+          # Install fake curl and fake npx to /usr/local/bin
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl" /usr/local/bin/curl \
+            || sudo cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl" /usr/local/bin/curl
+          chmod +x /usr/local/bin/curl \
+            || sudo chmod +x /usr/local/bin/curl
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-npx" /usr/local/bin/npx \
+            || sudo cp "$GITHUB_WORKSPACE/tests/fixtures/fake-npx" /usr/local/bin/npx
+          chmod +x /usr/local/bin/npx \
+            || sudo chmod +x /usr/local/bin/npx
+
+          # Create a custom workdir with a JS file to lint
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/workdir-test"
+          echo "// empty file" > "$GITHUB_WORKSPACE/tests/fixtures/workdir-test/empty.js"
+
+          which curl
+          which npx
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          eslint_flags: '.'
+          workdir: 'tests/fixtures/workdir-test'
+          tool_name: 'eslint-test-workdir'
+
+      - name: Assert action completed with custom workdir
+        run: |
+          echo "Action completed with custom workdir=tests/fixtures/workdir-test"
+          echo "PASS"

@@ -1,0 +1,45 @@
+name: Test basic eslint run (no errors)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install fake binaries into PATH
+        run: |
+          # Copy fake install script to /tmp
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-reviewdog-install.sh" /tmp/fake-reviewdog-install.sh
+          chmod +x /tmp/fake-reviewdog-install.sh
+
+          # Install fake curl and fake npx to /usr/local/bin (definitely on PATH)
+          # Use cp directly (act runs as root) with sudo fallback
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl" /usr/local/bin/curl \
+            || sudo cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl" /usr/local/bin/curl
+          chmod +x /usr/local/bin/curl \
+            || sudo chmod +x /usr/local/bin/curl
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-npx" /usr/local/bin/npx \
+            || sudo cp "$GITHUB_WORKSPACE/tests/fixtures/fake-npx" /usr/local/bin/npx
+          chmod +x /usr/local/bin/npx \
+            || sudo chmod +x /usr/local/bin/npx
+
+          # Verify they are found
+          which curl
+          which npx
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          eslint_flags: '.'
+          workdir: '.'
+          tool_name: 'eslint-test-basic'
+
+      - name: Assert action completed successfully
+        run: |
+          echo "Action completed without error"
+          echo "PASS"
