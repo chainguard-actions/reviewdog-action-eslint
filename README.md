@@ -16,6 +16,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v1.34 | [`v1.34`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.34) | [`556a3fd`](https://github.com/reviewdog/action-eslint/commit/556a3fdaf8b4201d4d74d406013386aa4f7dab96) |
 | v1.34.0 | [`v1.34.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.34.0) | [`556a3fd`](https://github.com/reviewdog/action-eslint/commit/556a3fdaf8b4201d4d74d406013386aa4f7dab96) |
 | v1.35.0 | [`v1.35.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.35.0) | [`5eb89b1`](https://github.com/reviewdog/action-eslint/commit/5eb89b1e6e94ca33e91c3814c34b25a8370bba46) |
+| v1.35.1 | [`v1.35.1`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.35.1) | [`f7eb7e5`](https://github.com/reviewdog/action-eslint/commit/f7eb7e555c4d14324b1827e69cad181d370a173e) |
 
 ## Privacy
 
