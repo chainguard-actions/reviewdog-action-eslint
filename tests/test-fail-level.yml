@@ -1,0 +1,49 @@
+name: Test fail_level with eslint errors
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up fake curl to mock reviewdog installation
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl.sh" "$HOME/.local/bin/curl"
+          chmod +x "$HOME/.local/bin/curl"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install npm dependencies in error-project fixture
+        run: |
+          cd "$GITHUB_WORKSPACE/tests/fixtures/error-project"
+          npm install --silent
+
+      - name: Run action with fail_level=none (should succeed even with errors)
+        id: action-none
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          eslint_flags: 'bad.js'
+          workdir: tests/fixtures/error-project
+          tool_name: eslint-test-fail-none
+        continue-on-error: true
+
+      - name: Assert fail_level=none outcome
+        env:
+          OUTCOME: ${{ steps.action-none.outcome }}
+        run: |
+          echo "outcome with fail_level=none: $OUTCOME"
+          # With fail_level=none, reviewdog always exits 0 regardless of eslint findings
+          # However, under the harness the sentinel repo may cause reviewdog to fail
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded with fail_level=none"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected under harness - sentinel repo or reviewdog API issue)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

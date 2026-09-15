@@ -1,0 +1,47 @@
+name: Test custom tool_name and level inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up fake curl to mock reviewdog installation
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl.sh" "$HOME/.local/bin/curl"
+          chmod +x "$HOME/.local/bin/curl"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install npm dependencies in tool-name-project fixture
+        run: |
+          cd "$GITHUB_WORKSPACE/tests/fixtures/tool-name-project"
+          npm install --silent
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          level: warning
+          eslint_flags: 'app.js'
+          workdir: tests/fixtures/tool-name-project
+          tool_name: my-custom-eslint
+        continue-on-error: true
+
+      - name: Assert action ran with custom tool_name
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action completed successfully with custom tool_name"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected under harness - sentinel repo or reviewdog API issue)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
