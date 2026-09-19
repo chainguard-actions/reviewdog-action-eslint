@@ -1,22 +1,161 @@
-# reviewdog/action-eslint
+# GitHub Action: Run eslint with reviewdog
 
-🐶 Run eslint with reviewdog on pull requests to improve code review experience.
+[![depup](https://github.com/reviewdog/action-eslint/workflows/depup/badge.svg)](https://github.com/reviewdog/action-eslint/actions?query=workflow%3Adepup)
+[![release](https://github.com/reviewdog/action-eslint/workflows/release/badge.svg)](https://github.com/reviewdog/action-eslint/actions?query=workflow%3Arelease)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/reviewdog/action-eslint?logo=github&sort=semver)](https://github.com/reviewdog/action-eslint/releases)
+[![action-bumpr supported](https://img.shields.io/badge/bumpr-supported-ff69b4?logo=github&link=https://github.com/haya14busa/action-bumpr)](https://github.com/haya14busa/action-bumpr)
+[![Used-by counter](https://img.shields.io/endpoint?url=https://haya14busa.github.io/github-used-by/data/reviewdog/action-eslint/shieldsio.json)](https://github.com/haya14busa/github-used-by/tree/main/repo/reviewdog/action-eslint)
 
-Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/reviewdog/action-eslint](https://github.com/reviewdog/action-eslint).
+This action runs [eslint](https://github.com/eslint/eslint) with
+[reviewdog](https://github.com/reviewdog/reviewdog) on pull requests to improve
+code review experience.
 
-## Versions
+[![github-pr-check sample](https://user-images.githubusercontent.com/3797062/65439130-a6043b80-de61-11e9-98b5-bd9567e184b0.png)](https://github.com/reviewdog/action-eslint/pull/1)
+![eslint reviewdog rdjson demo](https://user-images.githubusercontent.com/3797062/97085944-87233a80-165b-11eb-94a8-0a47d5e24905.png)
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v1 | [`v1`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1) | [`556a3fd`](https://github.com/reviewdog/action-eslint/commit/556a3fdaf8b4201d4d74d406013386aa4f7dab96) |
-| v1.33 | [`v1.33`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33) | [`2fee6dd`](https://github.com/reviewdog/action-eslint/commit/2fee6dd72a5419ff4113f694e2068d2a03bb35dd) |
-| v1.33.0 | [`v1.33.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33.0) | [`9b5b015`](https://github.com/reviewdog/action-eslint/commit/9b5b0150e399e1f007ee3c27bc156549810a64e3) |
-| v1.33.1 | [`v1.33.1`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33.1) | [`4dbed17`](https://github.com/reviewdog/action-eslint/commit/4dbed174b255fcf81579beb621671c99ff699e09) |
-| v1.33.2 | [`v1.33.2`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33.2) | [`2fee6dd`](https://github.com/reviewdog/action-eslint/commit/2fee6dd72a5419ff4113f694e2068d2a03bb35dd) |
-| v1.34 | [`v1.34`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.34) | [`556a3fd`](https://github.com/reviewdog/action-eslint/commit/556a3fdaf8b4201d4d74d406013386aa4f7dab96) |
-| v1.34.0 | [`v1.34.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.34.0) | [`556a3fd`](https://github.com/reviewdog/action-eslint/commit/556a3fdaf8b4201d4d74d406013386aa4f7dab96) |
-| v1.35.0 | [`v1.35.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.35.0) | [`5eb89b1`](https://github.com/reviewdog/action-eslint/commit/5eb89b1e6e94ca33e91c3814c34b25a8370bba46) |
-| v1.35.1 | [`v1.35.1`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.35.1) | [`f7eb7e5`](https://github.com/reviewdog/action-eslint/commit/f7eb7e555c4d14324b1827e69cad181d370a173e) |
+## Inputs
+
+### `github_token`
+
+**Required**. Default is `${{ github.token }}`.
+
+### `level`
+
+Optional. Report level for reviewdog \[`info`,`warning`,`error`\].
+It's same as `-level` flag of reviewdog.
+
+### `reporter`
+
+Reporter of reviewdog command \[`github-pr-check`,`github-check`,`github-pr-review`\].
+Default is `github-pr-review`.
+It's same as `-reporter` flag of reviewdog.
+
+`github-pr-review` can use Markdown and add a link to rule page in reviewdog reports.
+
+### `tool_name`
+
+Optional. Tool name to use for reviewdog reporter. Default is `eslint`.
+This becomes the check/run name on GitHub (e.g., for `github-check`/`github-pr-check`) and the tool label in review comments.
+Useful when running in a matrix to distinguish checks, e.g. `eslint-${{ matrix.node_version }}`.
+
+### `filter_mode`
+
+Optional. Filtering mode for the reviewdog command \[`added`,`diff_context`,`file`,`nofilter`\].
+Default is added.
+
+### `fail_level`
+
+Optional. If set to `none`, always use exit code 0 for reviewdog. Otherwise, exit code 1 for reviewdog if it finds at least 1 issue with severity greater than or equal to the given level.
+Possible values: [`none`, `any`, `info`, `warning`, `error`]
+Default is `none`.
+
+### `fail_on_error`
+
+Deprecated, use `fail_level` instead.
+Optional. Exit code for reviewdog when errors are found \[`true`,`false`\]
+Default is `false`.
+
+### `reviewdog_flags`
+
+Optional. Additional reviewdog flags
+
+### `eslint_flags`
+
+Optional. Flags and args of eslint command. Default: '.'
+
+### `workdir`
+
+Optional. The directory from which to look for and run eslint. Default '.'
+
+### `node_options`
+
+Optional. The NODE_OPTIONS environment variable to use with eslint. Default is ''.
+
+### `only_changed`
+
+Optional. Run eslint only on changed (and added) files, for speedup [`true`, `false`]. Default: `false`.
+
+Will fetch the tip of the base branch with depth 1 from remote `origin` if it is not available.
+If you use different remote name or customize the checkout otherwise, make the tip of the base branch available before this action.
+
+## Example usage
+
+You also need to install [eslint](https://github.com/eslint/eslint).
+
+```shell
+# Example
+$ npm install eslint -D
+```
+
+You can create [eslint
+config](https://eslint.org/docs/user-guide/configuring)
+and this action uses that config too.
+
+### [.github/workflows/reviewdog.yml](.github/workflows/reviewdog.yml)
+
+```yml
+name: reviewdog
+on: [pull_request]
+jobs:
+  eslint:
+    name: runner / eslint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: reviewdog/action-eslint@2fee6dd72a5419ff4113f694e2068d2a03bb35dd # v1.33.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review # Change reporter.
+          eslint_flags: "src/"
+```
+
+You can also set up node and eslint manually like below.
+
+```yml
+name: reviewdog
+on: [pull_request]
+jobs:
+  eslint:
+    name: runner / eslint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: "20"
+      - run: yarn install
+      - uses: reviewdog/action-eslint@2fee6dd72a5419ff4113f694e2068d2a03bb35dd # v1.33.2
+        with:
+          reporter: github-check
+          eslint_flags: "src/"
+```
+
+### Matrix example with unique tool name
+
+```yml
+name: reviewdog
+on: [pull_request]
+jobs:
+  eslint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - uses: reviewdog/action-eslint@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-check
+          tool_name: eslint-node-${{ matrix.node }}
+          eslint_flags: "src/"
+```
 
 ## Privacy
 

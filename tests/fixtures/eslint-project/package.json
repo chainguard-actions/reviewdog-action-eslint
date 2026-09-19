@@ -1,0 +1,9 @@
+{
+  "name": "eslint-test-fixture",
+  "version": "1.0.0",
+  "description": "Test fixture for action-eslint tests",
+  "devDependencies": {
+    "eslint": "^10.4.1"
+  },
+  "license": "MIT"
+}

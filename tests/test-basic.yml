@@ -1,0 +1,90 @@
+name: Test basic usage - clean code
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install eslint in fixture project directory
+        run: |
+          cd "$GITHUB_WORKSPACE/tests/fixtures/eslint-project"
+          npm install
+
+      - name: Create fake reviewdog binary
+        run: |
+          mkdir -p /tmp/fake-bin
+          cat > /tmp/fake-bin/reviewdog << 'EOF'
+          #!/bin/sh
+          # Fake reviewdog: consume stdin and exit 0
+          cat > /dev/null
+          echo "fake reviewdog ran successfully"
+          exit 0
+          EOF
+          chmod +x /tmp/fake-bin/reviewdog
+
+      - name: Create fake install script for reviewdog
+        run: |
+          cat > /tmp/fake-install-reviewdog.sh << 'EOF'
+          #!/bin/sh
+          # Fake install.sh: copy fake reviewdog to the -b directory
+          BINDIR=""
+          prev=""
+          for arg in "$@"; do
+            if [ "$prev" = "-b" ]; then
+              BINDIR="$arg"
+            fi
+            prev="$arg"
+          done
+          if [ -n "$BINDIR" ]; then
+            mkdir -p "$BINDIR"
+            cp /tmp/fake-bin/reviewdog "$BINDIR/reviewdog"
+          fi
+          echo "fake install done"
+          EOF
+          chmod +x /tmp/fake-install-reviewdog.sh
+
+      - name: Create fake curl that serves the fake install script
+        run: |
+          mkdir -p /tmp/mock-curl
+          cat > /tmp/mock-curl/curl << 'CURLEOF'
+          #!/bin/sh
+          # Fake curl: serve fake reviewdog install script, honor -o flag
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *reviewdog*)
+              if [ -n "$out" ]; then
+                cat /tmp/fake-install-reviewdog.sh > "$out"
+              else
+                cat /tmp/fake-install-reviewdog.sh
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          CURLEOF
+          chmod +x /tmp/mock-curl/curl
+          echo "/tmp/mock-curl" >> "$GITHUB_PATH"
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          eslint_flags: 'clean.js'
+          workdir: 'tests/fixtures/eslint-project'
+
+      - name: Assert action completed successfully
+        run: |
+          echo "Action completed - eslint ran on clean code with github-check reporter"
+          echo "PASS"
