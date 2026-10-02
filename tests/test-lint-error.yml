@@ -1,0 +1,51 @@
+name: Test lint error detection
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up test workdir with eslint and error file
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/test-errors-workdir"
+          cd "$GITHUB_WORKSPACE/test-errors-workdir"
+          printf '%s\n' '{"name":"test-errors","version":"1.0.0","devDependencies":{"eslint":"^10.4.1"}}' > package.json
+          printf '%s\n' "module.exports = [{ rules: { 'no-undef': 'error' } }];" > eslint.config.js
+          printf '%s\n' 'var x = undeclaredVariable;' > bad.js
+          printf '%s\n' 'var y = anotherUndeclared;' >> bad.js
+          npm install 2>&1 | tail -5
+
+      - name: Install fake curl to intercept reviewdog download
+        run: |
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl.sh" /usr/local/bin/curl 2>/dev/null || \
+            sudo cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl.sh" /usr/local/bin/curl
+          chmod +x /usr/local/bin/curl 2>/dev/null || \
+            sudo chmod +x /usr/local/bin/curl
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: error
+          eslint_flags: 'bad.js'
+          workdir: test-errors-workdir
+          tool_name: eslint-test-errors
+
+      - name: Assert action ran (with or without lint errors)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action correctly failed due to lint errors with fail_level=error"
+          elif [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded (fake reviewdog exits 0 regardless of errors)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

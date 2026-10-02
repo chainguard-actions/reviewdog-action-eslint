@@ -1,0 +1,41 @@
+name: Test filter_mode file
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up test workdir with eslint
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/test-filter-workdir"
+          cd "$GITHUB_WORKSPACE/test-filter-workdir"
+          printf '%s\n' '{"name":"test-filter","version":"1.0.0","devDependencies":{"eslint":"^10.4.1"}}' > package.json
+          printf '%s\n' 'module.exports = [];' > eslint.config.js
+          printf '%s\n' "'use strict';" > utils.js
+          printf '%s\n' 'var x = 1;' >> utils.js
+          npm install 2>&1 | tail -5
+
+      - name: Install fake curl to intercept reviewdog download
+        run: |
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl.sh" /usr/local/bin/curl 2>/dev/null || \
+            sudo cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl.sh" /usr/local/bin/curl
+          chmod +x /usr/local/bin/curl 2>/dev/null || \
+            sudo chmod +x /usr/local/bin/curl
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: file
+          fail_level: none
+          eslint_flags: 'utils.js'
+          workdir: test-filter-workdir
+          tool_name: eslint-filter-file
+
+      - name: Assert action succeeded with filter_mode=file
+        run: |
+          echo "Action completed successfully with filter_mode=file"
+          echo "PASS: eslint ran with file filter mode"

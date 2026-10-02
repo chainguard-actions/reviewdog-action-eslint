@@ -1,0 +1,41 @@
+name: Test basic usage - clean JS file
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up test workdir with eslint
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/test-basic-workdir"
+          cd "$GITHUB_WORKSPACE/test-basic-workdir"
+          printf '%s\n' '{"name":"test-basic","version":"1.0.0","devDependencies":{"eslint":"^10.4.1"}}' > package.json
+          printf '%s\n' 'module.exports = [];' > eslint.config.js
+          printf '%s\n' "'use strict';" > clean.js
+          printf '%s\n' 'var x = 1;' >> clean.js
+          npm install 2>&1 | tail -5
+
+      - name: Install fake curl to intercept reviewdog download
+        run: |
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl.sh" /usr/local/bin/curl 2>/dev/null || \
+            sudo cp "$GITHUB_WORKSPACE/tests/fixtures/fake-curl.sh" /usr/local/bin/curl
+          chmod +x /usr/local/bin/curl 2>/dev/null || \
+            sudo chmod +x /usr/local/bin/curl
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          eslint_flags: 'clean.js'
+          workdir: test-basic-workdir
+          tool_name: eslint-test-basic
+
+      - name: Assert action succeeded
+        run: |
+          echo "Action completed successfully"
+          echo "PASS: eslint ran without fatal errors on clean JS file"
