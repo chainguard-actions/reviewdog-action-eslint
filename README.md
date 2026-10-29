@@ -6,19 +6,19 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 ## Versions
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v1 | [`v1`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1) | [`556a3fd`](https://github.com/reviewdog/action-eslint/commit/556a3fdaf8b4201d4d74d406013386aa4f7dab96) |
-| v1.33 | [`v1.33`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33) | [`2fee6dd`](https://github.com/reviewdog/action-eslint/commit/2fee6dd72a5419ff4113f694e2068d2a03bb35dd) |
-| v1.33.0 | [`v1.33.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33.0) | [`9b5b015`](https://github.com/reviewdog/action-eslint/commit/9b5b0150e399e1f007ee3c27bc156549810a64e3) |
-| v1.33.1 | [`v1.33.1`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33.1) | [`4dbed17`](https://github.com/reviewdog/action-eslint/commit/4dbed174b255fcf81579beb621671c99ff699e09) |
-| v1.33.2 | [`v1.33.2`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33.2) | [`2fee6dd`](https://github.com/reviewdog/action-eslint/commit/2fee6dd72a5419ff4113f694e2068d2a03bb35dd) |
-| v1.34 | [`v1.34`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.34) | [`556a3fd`](https://github.com/reviewdog/action-eslint/commit/556a3fdaf8b4201d4d74d406013386aa4f7dab96) |
-| v1.34.0 | [`v1.34.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.34.0) | [`556a3fd`](https://github.com/reviewdog/action-eslint/commit/556a3fdaf8b4201d4d74d406013386aa4f7dab96) |
-| v1.35.0 | [`v1.35.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.35.0) | [`5eb89b1`](https://github.com/reviewdog/action-eslint/commit/5eb89b1e6e94ca33e91c3814c34b25a8370bba46) |
-| v1.35.1 | [`v1.35.1`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.35.1) | [`f7eb7e5`](https://github.com/reviewdog/action-eslint/commit/f7eb7e555c4d14324b1827e69cad181d370a173e) |
-| v1.36.0 | [`v1.36.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.36.0) | [`b6303df`](https://github.com/reviewdog/action-eslint/commit/b6303df522851d0e9abaea654da0222037d97e75) |
-| v1.36.1 | [`v1.36.1`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.36.1) | [`3ee2a45`](https://github.com/reviewdog/action-eslint/commit/3ee2a450da17e060b9dfa4bffd53976906c6b2b0) |
+| Version | Tag | Upstream commit | Hardening report |
+|---------|-----|-----------------|------------------|
+| v1 | [`v1`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1) | [`556a3fd`](https://github.com/reviewdog/action-eslint/commit/556a3fdaf8b4201d4d74d406013386aa4f7dab96) | — |
+| v1.33 | [`v1.33`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33) | [`2fee6dd`](https://github.com/reviewdog/action-eslint/commit/2fee6dd72a5419ff4113f694e2068d2a03bb35dd) | — |
+| v1.33.0 | [`v1.33.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33.0) | [`9b5b015`](https://github.com/reviewdog/action-eslint/commit/9b5b0150e399e1f007ee3c27bc156549810a64e3) | [`HARDENING.md`](https://github.com/chainguard-actions/reviewdog-action-eslint/blob/v1.33.0/HARDENING.md) |
+| v1.33.1 | [`v1.33.1`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33.1) | [`4dbed17`](https://github.com/reviewdog/action-eslint/commit/4dbed174b255fcf81579beb621671c99ff699e09) | [`HARDENING.md`](https://github.com/chainguard-actions/reviewdog-action-eslint/blob/v1.33.1/HARDENING.md) |
+| v1.33.2 | [`v1.33.2`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.33.2) | [`2fee6dd`](https://github.com/reviewdog/action-eslint/commit/2fee6dd72a5419ff4113f694e2068d2a03bb35dd) | [`HARDENING.md`](https://github.com/chainguard-actions/reviewdog-action-eslint/blob/v1.33.2/HARDENING.md) |
+| v1.34 | [`v1.34`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.34) | [`556a3fd`](https://github.com/reviewdog/action-eslint/commit/556a3fdaf8b4201d4d74d406013386aa4f7dab96) | — |
+| v1.34.0 | [`v1.34.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.34.0) | [`556a3fd`](https://github.com/reviewdog/action-eslint/commit/556a3fdaf8b4201d4d74d406013386aa4f7dab96) | [`HARDENING.md`](https://github.com/chainguard-actions/reviewdog-action-eslint/blob/v1.34.0/HARDENING.md) |
+| v1.35.0 | [`v1.35.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.35.0) | [`5eb89b1`](https://github.com/reviewdog/action-eslint/commit/5eb89b1e6e94ca33e91c3814c34b25a8370bba46) | [`HARDENING.md`](https://github.com/chainguard-actions/reviewdog-action-eslint/blob/v1.35.0/HARDENING.md) |
+| v1.35.1 | [`v1.35.1`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.35.1) | [`f7eb7e5`](https://github.com/reviewdog/action-eslint/commit/f7eb7e555c4d14324b1827e69cad181d370a173e) | [`HARDENING.md`](https://github.com/chainguard-actions/reviewdog-action-eslint/blob/v1.35.1/HARDENING.md) |
+| v1.36.0 | [`v1.36.0`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.36.0) | [`b6303df`](https://github.com/reviewdog/action-eslint/commit/b6303df522851d0e9abaea654da0222037d97e75) | [`HARDENING.md`](https://github.com/chainguard-actions/reviewdog-action-eslint/blob/v1.36.0/HARDENING.md) |
+| v1.36.1 | [`v1.36.1`](https://github.com/chainguard-actions/reviewdog-action-eslint/tree/v1.36.1) | [`3ee2a45`](https://github.com/reviewdog/action-eslint/commit/3ee2a450da17e060b9dfa4bffd53976906c6b2b0) | [`HARDENING.md`](https://github.com/chainguard-actions/reviewdog-action-eslint/blob/v1.36.1/HARDENING.md) |
 
 ## Privacy
 
