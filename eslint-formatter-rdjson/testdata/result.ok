@@ -1,0 +1,329 @@
+{
+  "source": {
+    "name": "eslint",
+    "url": "https://eslint.org/"
+  },
+  "diagnostics": [
+    {
+      "message": "Parsing error: Unexpected character '🐶'",
+      "location": {
+        "path": "testdata/error.js",
+        "range": {
+          "start": {
+            "line": 1,
+            "column": 1
+          }
+        }
+      },
+      "severity": "ERROR",
+      "code": {
+        "value": null,
+        "url": ""
+      },
+      "original_output": "{\"ruleId\":null,\"fatal\":true,\"severity\":2,\"message\":\"Parsing error: Unexpected character '🐶'\",\"line\":1,\"column\":1}"
+    },
+    {
+      "message": "'test' is defined but never used.",
+      "location": {
+        "path": "testdata/test.js",
+        "range": {
+          "start": {
+            "line": 2,
+            "column": 10
+          },
+          "end": {
+            "line": 2,
+            "column": 14
+          }
+        }
+      },
+      "severity": "ERROR",
+      "code": {
+        "value": "no-unused-vars",
+        "url": "https://eslint.org/docs/latest/rules/no-unused-vars"
+      },
+      "original_output": "{\"ruleId\":\"no-unused-vars\",\"severity\":2,\"message\":\"'test' is defined but never used.\",\"line\":2,\"column\":10,\"messageId\":\"unusedVar\",\"endLine\":2,\"endColumn\":14,\"suggestions\":[{\"messageId\":\"removeVar\",\"data\":{\"varName\":\"test\"},\"fix\":{\"range\":[9,111],\"text\":\"\"},\"desc\":\"Remove unused variable 'test'.\"}]}",
+      "suggestions": [
+        {
+          "range": {
+            "start": {
+              "line": 2,
+              "column": 1
+            },
+            "end": {
+              "line": 7,
+              "column": 2
+            }
+          },
+          "text": ""
+        }
+      ]
+    },
+    {
+      "message": "The update clause in this loop moves the variable in the wrong direction.",
+      "location": {
+        "path": "testdata/test.js",
+        "range": {
+          "start": {
+            "line": 3,
+            "column": 3
+          },
+          "end": {
+            "line": 3,
+            "column": 31
+          }
+        }
+      },
+      "severity": "ERROR",
+      "code": {
+        "value": "for-direction",
+        "url": "https://eslint.org/docs/latest/rules/for-direction"
+      },
+      "original_output": "{\"ruleId\":\"for-direction\",\"severity\":2,\"message\":\"The update clause in this loop moves the variable in the wrong direction.\",\"line\":3,\"column\":3,\"messageId\":\"incorrectDirection\",\"endLine\":3,\"endColumn\":31}"
+    },
+    {
+      "message": "'a' is defined but never used.",
+      "location": {
+        "path": "testdata/test.js",
+        "range": {
+          "start": {
+            "line": 4,
+            "column": 9
+          },
+          "end": {
+            "line": 4,
+            "column": 10
+          }
+        }
+      },
+      "severity": "ERROR",
+      "code": {
+        "value": "no-unused-vars",
+        "url": "https://eslint.org/docs/latest/rules/no-unused-vars"
+      },
+      "original_output": "{\"ruleId\":\"no-unused-vars\",\"severity\":2,\"message\":\"'a' is defined but never used.\",\"line\":4,\"column\":9,\"messageId\":\"unusedVar\",\"endLine\":4,\"endColumn\":10,\"suggestions\":[{\"messageId\":\"removeVar\",\"data\":{\"varName\":\"a\"},\"fix\":{\"range\":[64,70],\"text\":\"\"},\"desc\":\"Remove unused variable 'a'.\"}]}",
+      "suggestions": [
+        {
+          "range": {
+            "start": {
+              "line": 4,
+              "column": 5
+            },
+            "end": {
+              "line": 4,
+              "column": 11
+            }
+          },
+          "text": ""
+        }
+      ]
+    },
+    {
+      "message": "'b' is defined but never used.",
+      "location": {
+        "path": "testdata/test.js",
+        "range": {
+          "start": {
+            "line": 4,
+            "column": 15
+          },
+          "end": {
+            "line": 4,
+            "column": 16
+          }
+        }
+      },
+      "severity": "ERROR",
+      "code": {
+        "value": "no-unused-vars",
+        "url": "https://eslint.org/docs/latest/rules/no-unused-vars"
+      },
+      "original_output": "{\"ruleId\":\"no-unused-vars\",\"severity\":2,\"message\":\"'b' is defined but never used.\",\"line\":4,\"column\":15,\"messageId\":\"unusedVar\",\"endLine\":4,\"endColumn\":16,\"suggestions\":[{\"messageId\":\"removeVar\",\"data\":{\"varName\":\"b\"},\"fix\":{\"range\":[70,76],\"text\":\"\"},\"desc\":\"Remove unused variable 'b'.\"}]}",
+      "suggestions": [
+        {
+          "range": {
+            "start": {
+              "line": 4,
+              "column": 11
+            },
+            "end": {
+              "line": 4,
+              "column": 17
+            }
+          },
+          "text": ""
+        }
+      ]
+    },
+    {
+      "message": "'test2' is defined but never used.",
+      "location": {
+        "path": "testdata/test.js",
+        "range": {
+          "start": {
+            "line": 9,
+            "column": 37
+          },
+          "end": {
+            "line": 9,
+            "column": 42
+          }
+        }
+      },
+      "severity": "ERROR",
+      "code": {
+        "value": "no-unused-vars",
+        "url": "https://eslint.org/docs/latest/rules/no-unused-vars"
+      },
+      "original_output": "{\"ruleId\":\"no-unused-vars\",\"severity\":2,\"message\":\"'test2' is defined but never used.\",\"line\":9,\"column\":25,\"messageId\":\"unusedVar\",\"endLine\":9,\"endColumn\":30,\"suggestions\":[{\"messageId\":\"removeVar\",\"data\":{\"varName\":\"test2\"},\"fix\":{\"range\":[113,206],\"text\":\"\"},\"desc\":\"Remove unused variable 'test2'.\"}]}",
+      "suggestions": [
+        {
+          "range": {
+            "start": {
+              "line": 9,
+              "column": 1
+            },
+            "end": {
+              "line": 14,
+              "column": 2
+            }
+          },
+          "text": ""
+        }
+      ]
+    },
+    {
+      "message": "The update clause in this loop moves the variable in the wrong direction.",
+      "location": {
+        "path": "testdata/test.js",
+        "range": {
+          "start": {
+            "line": 10,
+            "column": 3
+          },
+          "end": {
+            "line": 10,
+            "column": 31
+          }
+        }
+      },
+      "severity": "ERROR",
+      "code": {
+        "value": "for-direction",
+        "url": "https://eslint.org/docs/latest/rules/for-direction"
+      },
+      "original_output": "{\"ruleId\":\"for-direction\",\"severity\":2,\"message\":\"The update clause in this loop moves the variable in the wrong direction.\",\"line\":10,\"column\":3,\"messageId\":\"incorrectDirection\",\"endLine\":10,\"endColumn\":31}"
+    },
+    {
+      "message": "Redundant double negation.",
+      "location": {
+        "path": "testdata/test.js",
+        "range": {
+          "start": {
+            "line": 11,
+            "column": 9
+          },
+          "end": {
+            "line": 11,
+            "column": 12
+          }
+        }
+      },
+      "severity": "ERROR",
+      "code": {
+        "value": "no-extra-boolean-cast",
+        "url": "https://eslint.org/docs/latest/rules/no-extra-boolean-cast"
+      },
+      "original_output": "{\"ruleId\":\"no-extra-boolean-cast\",\"severity\":2,\"message\":\"Redundant double negation.\",\"line\":11,\"column\":9,\"messageId\":\"unexpectedNegation\",\"endLine\":11,\"endColumn\":12,\"fix\":{\"range\":[188,191],\"text\":\"i\"}}",
+      "suggestions": [
+        {
+          "range": {
+            "start": {
+              "line": 11,
+              "column": 9
+            },
+            "end": {
+              "line": 11,
+              "column": 11
+            }
+          },
+          "text": ""
+        }
+      ]
+    },
+    {
+      "message": "Empty block statement.",
+      "location": {
+        "path": "testdata/test.js",
+        "range": {
+          "start": {
+            "line": 11,
+            "column": 14
+          },
+          "end": {
+            "line": 12,
+            "column": 6
+          }
+        }
+      },
+      "severity": "ERROR",
+      "code": {
+        "value": "no-empty",
+        "url": "https://eslint.org/docs/latest/rules/no-empty"
+      },
+      "original_output": "{\"ruleId\":\"no-empty\",\"severity\":2,\"message\":\"Empty block statement.\",\"line\":11,\"column\":14,\"messageId\":\"unexpected\",\"endLine\":12,\"endColumn\":6,\"suggestions\":[{\"messageId\":\"suggestComment\",\"data\":{\"type\":\"block\"},\"fix\":{\"range\":[194,199],\"text\":\" /* empty */ \"},\"desc\":\"Add comment inside empty block statement.\"}]}",
+      "suggestions": [
+        {
+          "range": {
+            "start": {
+              "line": 11,
+              "column": 15
+            },
+            "end": {
+              "line": 12,
+              "column": 4
+            }
+          },
+          "text": " /* empty */"
+        }
+      ]
+    },
+    {
+      "message": "'f' is defined but never used.",
+      "location": {
+        "path": "testdata/test.js",
+        "range": {
+          "start": {
+            "line": 16,
+            "column": 10
+          },
+          "end": {
+            "line": 16,
+            "column": 11
+          }
+        }
+      },
+      "severity": "ERROR",
+      "code": {
+        "value": "no-unused-vars",
+        "url": "https://eslint.org/docs/latest/rules/no-unused-vars"
+      },
+      "original_output": "{\"ruleId\":\"no-unused-vars\",\"severity\":2,\"message\":\"'f' is defined but never used.\",\"line\":16,\"column\":10,\"messageId\":\"unusedVar\",\"endLine\":16,\"endColumn\":11,\"suggestions\":[{\"messageId\":\"removeVar\",\"data\":{\"varName\":\"f\"},\"fix\":{\"range\":[209,246],\"text\":\"\"},\"desc\":\"Remove unused variable 'f'.\"}]}",
+      "suggestions": [
+        {
+          "range": {
+            "start": {
+              "line": 16,
+              "column": 1
+            },
+            "end": {
+              "line": 19,
+              "column": 2
+            }
+          },
+          "text": ""
+        }
+      ]
+    }
+  ]
+}
