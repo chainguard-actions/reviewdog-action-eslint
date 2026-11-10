@@ -74,10 +74,9 @@ if [ -n "${CHANGED_FILES+x}" ] && [ "${#ESLINT_FLAGS_ARRAY[@]}" -eq 1 ] && [ "${
   ESLINT_FLAGS_ARRAY=()
 fi
 
-REVIEWDOG_FLAGS_ARRAY=()
-if [ -n "${INPUT_REVIEWDOG_FLAGS}" ]; then
-  read -r -d '' -a REVIEWDOG_FLAGS_ARRAY <<< "${INPUT_REVIEWDOG_FLAGS}" || true
-fi
+# Same whitespace split and glob as upstream's unquoted ${INPUT_REVIEWDOG_FLAGS}.
+# shellcheck disable=SC2206
+REVIEWDOG_FLAGS_ARRAY=(${INPUT_REVIEWDOG_FLAGS})
 
 ESLINT_ARGS=(-f "${ESLINT_FORMATTER}")
 ESLINT_ARGS+=("${ESLINT_FLAGS_ARRAY[@]}")

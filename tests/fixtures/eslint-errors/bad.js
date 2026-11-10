@@ -1,1 +1,0 @@
-var unusedVariable = 1;
