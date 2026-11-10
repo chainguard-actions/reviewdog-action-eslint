@@ -54,14 +54,14 @@ if [ "${INPUT_ONLY_CHANGED}" = "true" ]; then
 fi
 
 # eslint_flags may contain quoted arguments (e.g. globs such as
-# "src/**/*.{ts,tsx}"). Use xargs-based tokenization so the shell performs
-# word splitting and quote removal on the value without executing arbitrary
-# shell commands via eval.
+# "src/**/*.{ts,tsx}"). Tokenize with xargs so quotes are honored (word
+# splitting and quote removal) without evaluating the value as shell code.
 ESLINT_FLAGS_ARRAY=()
-_eslint_flags_input="${INPUT_ESLINT_FLAGS:-'.'}"
+_eslint_flags_input="${INPUT_ESLINT_FLAGS:-.}"
 if [ -n "${_eslint_flags_input}" ]; then
+  printf '%s' "${_eslint_flags_input}" | xargs -r true >/dev/null || exit 1  # fails on an unmatched quote
   while IFS= read -r -d '' t; do ESLINT_FLAGS_ARRAY+=("$t"); done \
-    < <(printf '%s' "${_eslint_flags_input}" | xargs printf '%s\0')
+    < <(printf '%s' "${_eslint_flags_input}" | xargs -r sh -c 'printf "%s\0" "$@"' sh)
 fi
 
 ESLINT_ARGS=(-f "${ESLINT_FORMATTER}")
@@ -70,11 +70,9 @@ if [ -n "${CHANGED_FILES+x}" ]; then
   ESLINT_ARGS+=("${CHANGED_FILES[@]}")
 fi
 
-REVIEWDOG_FLAGS_ARRAY=()
-if [ -n "${INPUT_REVIEWDOG_FLAGS}" ]; then
-  while IFS= read -r -d '' t; do REVIEWDOG_FLAGS_ARRAY+=("$t"); done \
-    < <(printf '%s' "${INPUT_REVIEWDOG_FLAGS}" | xargs printf '%s\0')
-fi
+# Same whitespace split and glob as upstream's unquoted ${INPUT_REVIEWDOG_FLAGS}.
+# shellcheck disable=SC2086,SC2206
+REVIEWDOG_FLAGS_ARRAY=(${INPUT_REVIEWDOG_FLAGS})
 
 echo '::group:: Running eslint with reviewdog 🐶 ...'
 npx --no-install eslint "${ESLINT_ARGS[@]}" \
